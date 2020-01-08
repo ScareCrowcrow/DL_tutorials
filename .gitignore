@@ -1,0 +1,13 @@
+.idea
+*.pyc
+/logs/
+.env
+leo/
+.DS_Store
+*.iml
+venv/
+.Python
+include/
+lib/
+test.py
+en_core_web_sm-2.2.5.tar.gz
