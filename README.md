@@ -10,3 +10,10 @@
 * python3 setup.py install
 
 `
+
+### 数据并行
+<pre name="code", class="python">
+if torch.cuda.device_count() > 1:
+    model = nn.DataParallel(model)
+model.to(device)
+</pre>
