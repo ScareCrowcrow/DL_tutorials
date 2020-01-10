@@ -5,7 +5,7 @@ from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torchvision import transforms, utils, datasets
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -125,7 +125,6 @@ class RandomCrop(object):
         return {'image': image, 'landmarks': landmarks}
 
 
-
 class ToTensor:
     def __call__(self, sample):
         image, landmarks = sample["image"], sample["landmarks"]
@@ -172,10 +171,54 @@ def user_transforms_show():
             break
 
 
+def show_landmarks_batch(sample_batch):
+    images_batch, landmarks_batch = sample_batch["image"], sample_batch["landmarks"]
+    batch_size = len(images_batch)
+    im_size = images_batch.size(2)
+    grid_border_size = 2
+
+    grid = utils.make_grid(images_batch)
+    plt.imshow(grid.numpy().transpose((1, 2, 0)))
+
+    for i in range(batch_size):
+        plt.scatter(landmarks_batch[i, :, 0].numpy() + i * im_size + (i + 1) * grid_border_size,
+                    landmarks_batch[i, :, 1].numpy() + grid_border_size, s=10, marker=".", c="r")
+        plt.title("Batch from dataloader")
+
+
+def regular_transform():
+    data_transform = transforms.Compose([
+        transforms.RandomSizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
+    hymenoptera_dataset = datasets.ImageFolder(root='hymenoptera_data/train',
+                                           transform=data_transform)
+    dataset_loader = torch.utils.data.DataLoader(hymenoptera_dataset,
+                                             batch_size=4, shuffle=True,
+                                             num_workers=4)
 
 if __name__ == "__main__":
     # show_one_figure()
     # use_dataset_show()
     # use_transform_show()
-    user_transforms_show()
-
+    # user_transforms_show()
+    transformed_dataset = FaceLandmarksDataset(csv_file='data/faces/face_landmarks.csv',
+                                               root_dir='data/faces/',
+                                               transform=transforms.Compose([
+                                                   Rescale(256),
+                                                   RandomCrop(224),
+                                                   ToTensor()
+                                               ]))
+    dataloader = DataLoader(transformed_dataset, batch_size=4, shuffle=True, num_workers=4)
+    for i_batch, sample_batch in enumerate(dataloader):
+        print(i_batch, sample_batch["image"].size(), sample_batch["landmarks"].size())
+        if i_batch == 3:
+            plt.figure()
+        show_landmarks_batch(sample_batch)
+        plt.axis('off')
+        plt.ioff()
+        plt.show()
+        break
